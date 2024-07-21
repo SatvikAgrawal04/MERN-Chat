@@ -3,10 +3,19 @@ const express = require("express");
 const mongoose = require("mongoose");
 const User = require("./models/user.model.js");
 const jwt = require("jsonwebtoken");
+const cors = require("cors");
 
 mongoose.connect(process.env.MONGODB_URI);
 const jwtSecret = process.env.JWT_SECRET;
+
 const app = express();
+app.use(express.json());
+app.use(
+  cors({
+    credentials: true,
+    origin: process.env.CLIENT_URL,
+  })
+);
 
 app.get("/test", (req, res) => {
   res.json("test ok");
