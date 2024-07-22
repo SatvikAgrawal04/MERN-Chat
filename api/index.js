@@ -5,7 +5,11 @@ const User = require("./models/user.model.js");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
 
-mongoose.connect(process.env.MONGODB_URI);
+try {
+  mongoose.connect(process.env.MONGODB_URI);
+} catch (error) {
+  if (error) throw error;
+}
 const jwtSecret = process.env.JWT_SECRET;
 
 const app = express();
@@ -22,17 +26,25 @@ app.get("/test", (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-  const { username, password } = req.body;
-  const user = await User.create({ username, password });
-  jwt.sign(
-    { userid: user._id },
-    jwtSecret,
-    { expiresIn: "1d" },
-    (err, token) => {
-      if (err) throw err;
-      res.cookie("token", token).status(201).json("ok");
-    }
-  );
+  try {
+    const { username, password } = req.body;
+    const user = await User.create({ username, password });
+    jwt.sign(
+      { userid: user._id },
+      jwtSecret,
+      { expiresIn: "1d" },
+      (err, token) => {
+        if (err) throw err;
+        res.cookie("token", token).status(201).json({
+          id: user._id,
+        });
+      }
+    );
+    console.log(user);
+  } catch (error) {
+    if (error) throw error;
+    res.status(500).json({ message: "Something went wrong" });
+  }
 });
 
 console.log(`listening on http://localhost:${process.env.PORT}`);
