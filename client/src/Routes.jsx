@@ -1,12 +1,12 @@
 import { useContext } from "react";
 import Register from "./register";
-import { UserContext } from "./UserContext.jsx";
+import { UserContext } from "./userContext.jsx";
 
 export default function Routes() {
-  const { username, id } = useContext(UserContext);
-
-  if (username) return `Welcome ${username}`;
-  console.log(username);
+  const { loggedInUsername, id } = useContext(UserContext);
+  if (loggedInUsername) {
+    return `Welcome ${loggedInUsername}`;
+  }
 
   return <Register />;
 }
