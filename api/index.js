@@ -57,12 +57,27 @@ app.post("/login", async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
-    const isMatch = await bcrypt.compare(user.password, password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({ message: "Invalid password" });
     }
+    jwt.sign(
+      {
+        userid: user._id,
+        username,
+      },
+      process.env.JWT_SECRET,
+      {},
+      (err, token) => {
+        if (err) throw err;
+        res.cookie("token", token).status(200).json({
+          id: user._id,
+          message: "Login successful",
+        });
+      }
+    );
   } catch (err) {
-    res.status(400).json({ message: "Invalid credentials" });
+    res.status(500).json({ message: "Something Went Wrong during login" });
     return;
   }
 });
@@ -72,17 +87,12 @@ app.post("/register", async (req, res) => {
     const { username, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({ username, password: hashedPassword });
-    jwt.sign(
-      { userid: user._id, username },
-      jwtSecret,
-      { expiresIn: "1d" },
-      (err, token) => {
-        if (err) throw err;
-        res.cookie("token", token).status(201).json({
-          id: user._id,
-        });
-      }
-    );
+    jwt.sign({ userid: user._id, username }, jwtSecret, {}, (err, token) => {
+      if (err) throw err;
+      res.cookie("token", token).status(201).json({
+        id: user._id,
+      });
+    });
     console.log(user);
   } catch (error) {
     if (error) throw error;
