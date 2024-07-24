@@ -4,6 +4,8 @@ const mongoose = require("mongoose");
 const User = require("./models/user.model.js");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const bcrypt = require("bcrypt");
 
 try {
   mongoose.connect(process.env.MONGODB_URI);
@@ -13,6 +15,7 @@ try {
 const jwtSecret = process.env.JWT_SECRET;
 
 const app = express();
+app.use(cookieParser());
 app.use(express.json());
 app.use(
   cors({
@@ -25,12 +28,52 @@ app.get("/test", (req, res) => {
   res.json("test ok");
 });
 
+app.get("/profile", async (req, res) => {
+  // const { token } = req.cookies;
+  const token = req.cookies?.token;
+  if (token) {
+    jwt.verify(token, process.env.JWT_SECRET, {}, (err, userData) => {
+      if (err) throw err;
+      console.log(userData);
+      res.json({
+        userData,
+      });
+    });
+  } else {
+    res.status(401).json("No token");
+  }
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+    if (!password) {
+      return res.status(400).json({ message: "Password is required" });
+    }
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+    const isMatch = await bcrypt.compare(user.password, password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+  } catch (err) {
+    res.status(400).json({ message: "Invalid credentials" });
+    return;
+  }
+});
+
 app.post("/register", async (req, res) => {
   try {
     const { username, password } = req.body;
-    const user = await User.create({ username, password });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ username, password: hashedPassword });
     jwt.sign(
-      { userid: user._id },
+      { userid: user._id, username },
       jwtSecret,
       { expiresIn: "1d" },
       (err, token) => {

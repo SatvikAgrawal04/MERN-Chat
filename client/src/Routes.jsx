@@ -1,5 +1,6 @@
 import { useContext } from "react";
-import Register from "./register";
+// import Register from "./register";
+import RegisterAndLoginForm from "./RegisterAndLoginForm.jsx";
 import { UserContext } from "./userContext.jsx";
 
 export default function Routes() {
@@ -8,5 +9,5 @@ export default function Routes() {
     return `Welcome ${loggedInUsername}`;
   }
 
-  return <Register />;
+  return <RegisterAndLoginForm />;
 }
