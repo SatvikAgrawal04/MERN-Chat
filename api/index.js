@@ -28,6 +28,7 @@ app.get("/test", (req, res) => {
   res.json("test ok");
 });
 
+//AUTHENTICATION
 app.get("/profile", async (req, res) => {
   // const { token } = req.cookies;
   const token = req.cookies?.token;
@@ -44,6 +45,7 @@ app.get("/profile", async (req, res) => {
   }
 });
 
+//LOGIN API
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -82,6 +84,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
+//REGISTER API
 app.post("/register", async (req, res) => {
   try {
     const { username, password } = req.body;
