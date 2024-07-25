@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
+const ws = require("ws");
 
 try {
   mongoose.connect(process.env.MONGODB_URI);
@@ -35,7 +36,6 @@ app.get("/profile", async (req, res) => {
   if (token) {
     jwt.verify(token, process.env.JWT_SECRET, {}, (err, userData) => {
       if (err) throw err;
-      console.log(userData);
       res.json({
         userData,
       });
@@ -96,7 +96,6 @@ app.post("/register", async (req, res) => {
         id: user._id,
       });
     });
-    console.log(user);
   } catch (error) {
     if (error) throw error;
     res.status(500).json({ message: "Something went wrong" });
@@ -104,4 +103,36 @@ app.post("/register", async (req, res) => {
 });
 
 console.log(`listening on http://localhost:${process.env.PORT}`);
-app.listen(process.env.PORT);
+const server = app.listen(process.env.PORT);
+
+const wss = new ws.WebSocketServer({ server });
+wss.on("connection", (connection, req) => {
+  const cookies = req.headers.cookie;
+  if (cookies) {
+    const tokenCookieString = cookies
+      .split(";")
+      .find((str) => str.startsWith("token="));
+    if (tokenCookieString) {
+      const token = tokenCookieString.replace("token=", "");
+      if (token) {
+        jwt.verify(token, process.env.JWT_SECRET, {}, (err, userData) => {
+          if (err) throw err;
+          const { userid, username } = userData;
+          connection.userid = userid;
+          connection.username = username;
+        });
+      }
+    }
+  }
+
+  [...wss.clients].forEach((client) => {
+    client.send(
+      JSON.stringify({
+        online: [...wss.clients].map((c) => ({
+          userid: c.userid,
+          username: c.username,
+        })),
+      })
+    );
+  });
+});
