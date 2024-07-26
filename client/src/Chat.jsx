@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Avatar from "./Avatar";
 
 export default function Chat() {
   const [ws, setWs] = useState(null);
@@ -59,11 +60,9 @@ export default function Chat() {
           <span className="text-xl">MERNChat</span>
         </div>
         {Object.keys(onlinePeople).map((userid) => (
-          <div className="flex cursor-pointer items-center border-b border-blue-200 px-2 py-4 hover:bg-blue-100">
-            <span className="flex-grow font-semibold text-blue-800">
-              {onlinePeople[userid]}
-            </span>
-            <span className="text-sm text-gray-500">Active</span>
+          <div className="flex cursor-pointer items-center gap-2 border-b border-blue-200 px-2 py-4 hover:bg-blue-100">
+            <Avatar username={onlinePeople[userid]} userid={userid} />
+            <span>{onlinePeople[userid]}</span>
           </div>
         ))}
       </div>
@@ -77,10 +76,10 @@ export default function Chat() {
         <div className="mt-4 flex gap-2">
           <input
             type="text"
-            className="flex-grow rounded-md border border-gray-300 bg-white p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-grow rounded-3xl border border-gray-300 bg-white p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Type your message"
           />
-          <button className="rounded-md bg-blue-500 p-3 text-white shadow-md transition duration-300 hover:bg-blue-600">
+          <button className="rounded-full bg-blue-500 p-3 text-white shadow-md transition duration-300 hover:bg-blue-600">
             {icon()}
           </button>
         </div>
