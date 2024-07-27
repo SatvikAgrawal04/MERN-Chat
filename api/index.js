@@ -89,6 +89,10 @@ app.post("/register", async (req, res) => {
   try {
     const { username, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
+    const ifExists = await User.findOne({ username });
+    if (ifExists) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
     const user = await User.create({ username, password: hashedPassword });
     jwt.sign({ userid: user._id, username }, jwtSecret, {}, (err, token) => {
       if (err) throw err;
