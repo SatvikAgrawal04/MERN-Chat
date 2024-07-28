@@ -1,18 +1,40 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import Avatar from "./Avatar";
 import Logo from "./logo";
 import { UserContext } from "./userContext.jsx";
+import { uniqBy } from "lodash";
+import axios from "axios";
 
 export default function Chat() {
   const [ws, setWs] = useState(null);
   const [onlinePeople, setOnlinePeople] = useState({});
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [newMessage, setNewMessage] = useState("");
+  const [messages, setMessages] = useState([]);
   const { loggedInUsername, id } = useContext(UserContext);
+  const messagesEndRef = useRef(null);
+
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:8000");
     setWs(ws);
     ws.addEventListener("message", handleMessage);
+    return () => ws.close(); // Cleanup on unmount
   }, []);
+
+  useEffect(() => {
+    if (selectedUserId) {
+      console.log("selectedUserId:" + selectedUserId);
+      axios.get("/messages/" + selectedUserId);
+    }
+  }, [selectedUserId]);
+
+  function scrollBottom() {
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 50);
+  }
 
   function showOnlinePeople(peopleArray) {
     const people = {};
@@ -24,9 +46,44 @@ export default function Chat() {
 
   function handleMessage(event) {
     const messageData = JSON.parse(event.data);
+    console.log({ event, messageData });
     if ("online" in messageData) {
       showOnlinePeople(messageData.online);
+    } else if ("text" in messageData) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: messageData.id,
+          text: messageData.text.trim(),
+          senderId: messageData.senderId,
+          recipientId: messageData.recipientId,
+        },
+      ]);
     }
+  }
+
+  function sendMessage(event) {
+    event.preventDefault();
+    if (selectedUserId && newMessage) {
+      const message = {
+        id: id,
+        senderId: id,
+        recipientId: selectedUserId,
+        text: newMessage.trim(),
+      };
+      ws.send(JSON.stringify(message));
+      setNewMessage("");
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          text: newMessage.trim(),
+          senderId: id,
+          recipientId: selectedUserId,
+        },
+      ]);
+    }
+    scrollBottom();
   }
 
   const icon = () => {
@@ -50,6 +107,7 @@ export default function Chat() {
 
   const onlineExcludingCurrentUser = { ...onlinePeople };
   delete onlineExcludingCurrentUser[id];
+  const messageWithoutDupes = uniqBy(messages, "id");
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -85,17 +143,49 @@ export default function Chat() {
               </div>
             </div>
           )}
+          {!!selectedUserId && (
+            <div className="custom-scrollbar overflow-y-scroll">
+              {messageWithoutDupes.map((message) => (
+                <div
+                  key={message.id}
+                  className={
+                    "my-2 flex " +
+                    (message.senderId === id ? "justify-end" : "justify-start")
+                  }
+                >
+                  <div
+                    className={
+                      "max-w-xs rounded-lg px-4 py-2 shadow-md " +
+                      (message.senderId === id
+                        ? "bg-blue-400 text-white"
+                        : "bg-gray-200 text-gray-900")
+                    }
+                  >
+                    {message.text}
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
         </div>
-        <div className="mt-4 flex gap-2">
-          <input
-            type="text"
-            className="flex-grow rounded-3xl border border-gray-300 bg-white p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Type your message"
-          />
-          <button className="rounded-full bg-blue-500 p-3 text-white shadow-md transition duration-300 hover:bg-blue-600">
-            {icon()}
-          </button>
-        </div>
+        {selectedUserId && (
+          <form className="mt-4 flex gap-2" onSubmit={sendMessage}>
+            <input
+              value={newMessage}
+              onChange={(ev) => setNewMessage(ev.target.value)}
+              type="text"
+              className="flex-grow rounded-3xl border border-gray-300 bg-white p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Type your message"
+            />
+            <button
+              type="submit"
+              className="rounded-full bg-blue-500 p-3 text-white shadow-md transition duration-300 hover:bg-blue-600"
+            >
+              {icon()}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const User = require("./models/user.model.js");
+const Message = require("./models/message.model.js");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -25,8 +26,37 @@ app.use(
   })
 );
 
+async function getUserDataFromRequest(req) {
+  return new Promise((resolve, reject) => {
+    const token = req.cookies?.token;
+    if (token) {
+      jwt.verify(token, process.env.JWT_SECRET, {}, (err, userData) => {
+        if (err) throw err;
+        // console.log(userData);
+        resolve(userData);
+      });
+    } else {
+      reject("No token");
+    }
+  });
+}
+
 app.get("/test", (req, res) => {
   res.json("test ok");
+});
+
+app.get("/messages/:userid", async (req, res) => {
+  const { userid } = req.params;
+  const userData = await getUserDataFromRequest(req);
+  const ourUserid = userData.userid;
+  console.log({ userid, ourUserid });
+  const messages = await Message.find({
+    sender: { $in: [userid, ourUserid] },
+    receiver: { $in: [userid, ourUserid] },
+  })
+    .sort({ createdAt: -1 })
+    .exec();
+  res.status(200).json(messages);
 });
 
 //AUTHENTICATION
@@ -111,6 +141,7 @@ const server = app.listen(process.env.PORT);
 
 const wss = new ws.WebSocketServer({ server });
 wss.on("connection", (connection, req) => {
+  // Get user data from the cookie
   const cookies = req.headers.cookie;
   if (cookies) {
     const tokenCookieString = cookies
@@ -129,6 +160,31 @@ wss.on("connection", (connection, req) => {
     }
   }
 
+  connection.on("message", async (message) => {
+    const { recipientId, text, senderId } = JSON.parse(message.toString());
+    if (recipientId && text) {
+      const messageDoc = await Message.create({
+        text,
+        receiver: recipientId,
+        sender: senderId,
+      });
+
+      [...wss.clients]
+        .filter((client) => client.userid === recipientId)
+        .forEach((client) =>
+          client.send(
+            JSON.stringify({
+              text: text,
+              recipientId: recipientId,
+              senderId: senderId,
+              id: messageDoc._id,
+            })
+          )
+        );
+    }
+  });
+
+  // Inform clients of every online connection when they are connected
   [...wss.clients].forEach((client) => {
     client.send(
       JSON.stringify({
