@@ -153,7 +153,11 @@ export default function Chat() {
             {userid === selectedUserId && (
               <div className="absolute bottom-0 left-0 top-0 w-1 rounded-r-md bg-blue-600" />
             )}
-            <Avatar username={onlinePeople[userid]} userid={userid} />
+            <Avatar
+              online={true}
+              username={onlinePeople[userid]}
+              userid={userid}
+            />
             <span className="font-medium text-gray-900">
               {onlinePeople[userid]}
             </span>

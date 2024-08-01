@@ -1,4 +1,4 @@
-export default function Avatar({ userid, username }) {
+export default function Avatar({ userid, username, online }) {
   const colors = [
     "bg-green-400",
     "bg-red-400",
@@ -14,12 +14,16 @@ export default function Avatar({ userid, username }) {
   return (
     <div
       className={
-        "flex h-10 w-10 items-center justify-center rounded-full " + color
+        "relative flex h-10 w-10 items-center justify-center rounded-full " +
+        color
       }
     >
       <div className="text-lg font-bold text-white">
         {username[0].toUpperCase()}
       </div>
+      {online && (
+        <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500"></div>
+      )}
     </div>
   );
 }
