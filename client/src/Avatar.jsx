@@ -21,9 +21,12 @@ export default function Avatar({ userid, username, online }) {
       <div className="text-lg font-bold text-white">
         {username[0].toUpperCase()}
       </div>
-      {online && (
-        <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500"></div>
-      )}
+      <div
+        className={
+          "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white" +
+          (online ? " bg-green-400" : " bg-gray-400")
+        }
+      ></div>
     </div>
   );
 }

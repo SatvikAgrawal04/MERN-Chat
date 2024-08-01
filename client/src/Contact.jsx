@@ -12,6 +12,7 @@ export default function Contact({ id, onClick, selected, username, online }) {
       {selected && (
         <div className="absolute bottom-0 left-0 top-0 w-1 rounded-r-md bg-blue-600" />
       )}
+      {/* {console.log(username)} */}
       <Avatar online={online} username={username} userid={id} />
       <span className="font-medium text-gray-900">{username}</span>
     </div>

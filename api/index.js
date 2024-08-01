@@ -145,6 +145,22 @@ const server = app.listen(process.env.PORT);
 
 const wss = new ws.WebSocketServer({ server });
 wss.on("connection", (connection, req) => {
+  connection.isAlive = true;
+
+  connection.timer = setInterval(() => {
+    connection.ping();
+    connection.deathTimer = setTimeout(() => {
+      connection.isAlive = false;
+      connection.terminate();
+      console.log("death");
+    }, 1000);
+  }, 5000);
+
+  connection.on("pong", () => {
+    // console.log("pong");
+    clearTimeout(connection.deathTimer);
+  });
+
   // Get user data from the cookie
   const cookies = req.headers.cookie;
   if (cookies) {

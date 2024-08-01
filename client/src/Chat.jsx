@@ -49,7 +49,7 @@ export default function Chat() {
       offlinePeopleArr.forEach((p) => {
         offlinePeople[p._id] = p;
       });
-      console.log(offlinePeople);
+      // console.log(offlinePeople);
       setOfflinePeople(offlinePeople);
       // console.log("offline: " +  offlinePeople }
     });
@@ -165,22 +165,23 @@ export default function Chat() {
           <Contact
             key={userid}
             id={userid}
-            username={onlineExcludingCurrentUser[userid].username}
+            username={onlineExcludingCurrentUser[userid]}
             onClick={() => setSelectedUserId(userid)}
             selected={userid === selectedUserId}
             online={true}
           />
         ))}
-        {Object.keys(offlinePeople).map((userid) => (
-          <Contact
-            key={userid}
-            id={userid}
-            username={offlinePeople[userid].username}
-            onClick={() => setSelectedUserId(userid)}
-            selected={userid === selectedUserId}
-            online={false}
-          />
-        ))}
+        {offlinePeople &&
+          Object.keys(offlinePeople).map((userid) => (
+            <Contact
+              key={userid}
+              id={userid}
+              username={offlinePeople[userid].username}
+              onClick={() => setSelectedUserId(userid)}
+              selected={userid === selectedUserId}
+              online={false}
+            />
+          ))}
       </div>
       {/* Chat Window */}
       <div className="flex flex-1 flex-col bg-blue-100 p-4">
