@@ -32,10 +32,18 @@ export default function Chat() {
   }
 
   useEffect(() => {
+    scrollBottom();
+  }, [messages]);
+
+  useEffect(() => {
     if (selectedUserId) {
       // console.log("selectedUserId:" + selectedUserId);
-      axios.get("/messages/" + selectedUserId);
+      axios.get("/messages/" + selectedUserId).then((res) => {
+        // console.log(res.data);
+        setMessages(res.data);
+      });
     }
+    // scrollBottom();
   }, [selectedUserId]);
 
   function scrollBottom() {
@@ -60,7 +68,7 @@ export default function Chat() {
     if ("online" in messageData) {
       showOnlinePeople(messageData.online);
     } else if ("text" in messageData) {
-      console.log({ messageData });
+      // console.log({ messageData });
       setMessages((prev) => [
         ...prev,
         // {
@@ -72,6 +80,7 @@ export default function Chat() {
         { ...messageData },
       ]);
     }
+    // scrollBottom();
   }
 
   function sendMessage(event) {
@@ -88,14 +97,14 @@ export default function Chat() {
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now(),
+          _id: Date.now(),
           text: newMessage.trim(),
           senderId: id,
           recipientId: selectedUserId,
         },
       ]);
     }
-    scrollBottom();
+    // scrollBottom();
 
     // ws.send(
     //   JSON.stringify({
@@ -126,7 +135,7 @@ export default function Chat() {
 
   const onlineExcludingCurrentUser = { ...onlinePeople };
   delete onlineExcludingCurrentUser[id];
-  const messageWithoutDupes = uniqBy(messages, "id");
+  const messageWithoutDupes = uniqBy(messages, "_id");
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -166,7 +175,7 @@ export default function Chat() {
             <div className="custom-scrollbar overflow-y-scroll">
               {messageWithoutDupes.map((message) => (
                 <div
-                  key={message.id}
+                  key={message._id}
                   className={
                     "my-2 flex " +
                     (message.senderId === id ? "justify-end" : "justify-start")
