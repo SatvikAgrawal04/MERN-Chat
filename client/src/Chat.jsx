@@ -15,15 +15,25 @@ export default function Chat() {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
+    connectToWs();
+    // return () => ws.close(); // Cleanup on unmount
+  }, []);
+
+  function connectToWs() {
     const ws = new WebSocket("ws://localhost:8000");
     setWs(ws);
     ws.addEventListener("message", handleMessage);
-    return () => ws.close(); // Cleanup on unmount
-  }, []);
+    ws.addEventListener("close", () => {
+      setTimeout(() => {
+        console.log("Disconnected... Trying to reconnect");
+        connectToWs();
+      }, 1000);
+    });
+  }
 
   useEffect(() => {
     if (selectedUserId) {
-      console.log("selectedUserId:" + selectedUserId);
+      // console.log("selectedUserId:" + selectedUserId);
       axios.get("/messages/" + selectedUserId);
     }
   }, [selectedUserId]);
@@ -46,18 +56,20 @@ export default function Chat() {
 
   function handleMessage(event) {
     const messageData = JSON.parse(event.data);
-    console.log({ event, messageData });
+    // console.log({ event, messageData });
     if ("online" in messageData) {
       showOnlinePeople(messageData.online);
     } else if ("text" in messageData) {
+      console.log({ messageData });
       setMessages((prev) => [
         ...prev,
-        {
-          id: messageData.id,
-          text: messageData.text.trim(),
-          senderId: messageData.senderId,
-          recipientId: messageData.recipientId,
-        },
+        // {
+        //   id: messageData.id,
+        //   text: messageData.text.trim(),
+        //   senderId: messageData.senderId,
+        //   recipientId: messageData.recipientId,
+        // },
+        { ...messageData },
       ]);
     }
   }
@@ -84,6 +96,13 @@ export default function Chat() {
       ]);
     }
     scrollBottom();
+
+    // ws.send(
+    //   JSON.stringify({
+    //     recipient: selectedUserId,
+    //     test: newMessage,
+    //   }),
+    // );
   }
 
   const icon = () => {

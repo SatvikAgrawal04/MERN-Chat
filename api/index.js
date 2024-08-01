@@ -51,11 +51,10 @@ app.get("/messages/:userid", async (req, res) => {
   const ourUserid = userData.userid;
   console.log({ userid, ourUserid });
   const messages = await Message.find({
-    sender: { $in: [userid, ourUserid] },
-    receiver: { $in: [userid, ourUserid] },
-  })
-    .sort({ createdAt: -1 })
-    .exec();
+    senderId: { $in: [userid, ourUserid] },
+    recipientId: { $in: [userid, ourUserid] },
+  }).sort({ createdAt: -1 });
+  // .exec();
   res.status(200).json(messages);
 });
 
@@ -165,23 +164,29 @@ wss.on("connection", (connection, req) => {
     if (recipientId && text) {
       const messageDoc = await Message.create({
         text,
-        receiver: recipientId,
-        sender: senderId,
+        recipientId,
+        senderId,
       });
-
       [...wss.clients]
         .filter((client) => client.userid === recipientId)
         .forEach((client) =>
           client.send(
             JSON.stringify({
-              text: text,
-              recipientId: recipientId,
-              senderId: senderId,
+              text,
+              recipientId,
+              senderId,
               id: messageDoc._id,
             })
           )
         );
     }
+    // const messageData = JSON.parse(message.toString());
+    // const { recipient, text } = messageData;
+    // if (recipient && text) {
+    //   [...wss.clients]
+    //     .filter((c) => c.userid === recipient)
+    //     .forEach((c) => c.send(JSON.stringify({ text })));
+    // }
   });
 
   // Inform clients of every online connection when they are connected
