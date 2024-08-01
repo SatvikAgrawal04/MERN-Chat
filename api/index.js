@@ -58,6 +58,11 @@ app.get("/messages/:userid", async (req, res) => {
   res.status(200).json(messages);
 });
 
+app.get("/people", async (req, res) => {
+  const users = await User.find({}, { _id: 1, username: 1 });
+  res.json(users);
+});
+
 //AUTHENTICATION
 app.get("/profile", async (req, res) => {
   // const { token } = req.cookies;

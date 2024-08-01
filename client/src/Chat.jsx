@@ -4,10 +4,12 @@ import Logo from "./logo";
 import { UserContext } from "./userContext.jsx";
 import { uniqBy } from "lodash";
 import axios from "axios";
+import Contact from "./Contact.jsx";
 
 export default function Chat() {
   const [ws, setWs] = useState(null);
   const [onlinePeople, setOnlinePeople] = useState({});
+  const [offlinePeople, setOfflinePeople] = useState({});
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
@@ -34,6 +36,24 @@ export default function Chat() {
   useEffect(() => {
     scrollBottom();
   }, [messages]);
+
+  useEffect(() => {
+    axios.get("/people").then((res) => {
+      // console.log(res.data);
+      // console.log(id);
+      const offlinePeopleArr = res.data
+        .filter((p) => p._id !== id)
+        .filter((p) => !Object.keys(onlinePeople).includes(p._id));
+      // console.log(offlinePeopleArr);
+      const offlinePeople = {};
+      offlinePeopleArr.forEach((p) => {
+        offlinePeople[p._id] = p;
+      });
+      console.log(offlinePeople);
+      setOfflinePeople(offlinePeople);
+      // console.log("offline: " +  offlinePeople }
+    });
+  }, [onlinePeople]);
 
   useEffect(() => {
     if (selectedUserId) {
@@ -142,26 +162,24 @@ export default function Chat() {
       <div className="w-1/3 overflow-y-auto bg-blue-50 p-4">
         <Logo />
         {Object.keys(onlineExcludingCurrentUser).map((userid) => (
-          <div
+          <Contact
             key={userid}
+            id={userid}
+            username={onlineExcludingCurrentUser[userid].username}
             onClick={() => setSelectedUserId(userid)}
-            className={
-              "relative flex cursor-pointer items-center gap-3 border-b border-gray-300 px-4 py-3 transition-colors duration-300 " +
-              (userid === selectedUserId ? "bg-blue-100" : "hover:bg-blue-50")
-            }
-          >
-            {userid === selectedUserId && (
-              <div className="absolute bottom-0 left-0 top-0 w-1 rounded-r-md bg-blue-600" />
-            )}
-            <Avatar
-              online={true}
-              username={onlinePeople[userid]}
-              userid={userid}
-            />
-            <span className="font-medium text-gray-900">
-              {onlinePeople[userid]}
-            </span>
-          </div>
+            selected={userid === selectedUserId}
+            online={true}
+          />
+        ))}
+        {Object.keys(offlinePeople).map((userid) => (
+          <Contact
+            key={userid}
+            id={userid}
+            username={offlinePeople[userid].username}
+            onClick={() => setSelectedUserId(userid)}
+            selected={userid === selectedUserId}
+            online={false}
+          />
         ))}
       </div>
       {/* Chat Window */}
