@@ -23,7 +23,7 @@ app.use(
   cors({
     credentials: true,
     origin: process.env.CLIENT_URL,
-  }),
+  })
 );
 
 async function getUserDataFromRequest(req) {
@@ -109,7 +109,7 @@ app.post("/login", async (req, res) => {
           id: user._id,
           message: "Login successful",
         });
-      },
+      }
     );
   } catch (err) {
     res.status(500).json({ message: "Something Went Wrong during login" });
@@ -154,7 +154,7 @@ wss.on("connection", (connection, req) => {
             userid: c.userid,
             username: c.username,
           })),
-        }),
+        })
       );
     });
   }
@@ -209,8 +209,8 @@ wss.on("connection", (connection, req) => {
               recipientId,
               senderId,
               _id: messageDoc._id,
-            }),
-          ),
+            })
+          )
         );
     }
     // const messageData = JSON.parse(message.toString());

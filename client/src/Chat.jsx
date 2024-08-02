@@ -15,10 +15,10 @@ export default function Chat() {
   const [messages, setMessages] = useState([]);
   const { loggedInUsername, id } = useContext(UserContext);
   const messagesEndRef = useRef(null);
+  const [darkMode, setDarkMode] = useState(true);
 
   useEffect(() => {
     connectToWs();
-    // return () => ws.close(); // Cleanup on unmount
   }, []);
 
   function connectToWs() {
@@ -39,31 +39,23 @@ export default function Chat() {
 
   useEffect(() => {
     axios.get("/people").then((res) => {
-      // console.log(res.data);
-      // console.log(id);
       const offlinePeopleArr = res.data
         .filter((p) => p._id !== id)
         .filter((p) => !Object.keys(onlinePeople).includes(p._id));
-      // console.log(offlinePeopleArr);
       const offlinePeople = {};
       offlinePeopleArr.forEach((p) => {
         offlinePeople[p._id] = p;
       });
-      // console.log(offlinePeople);
       setOfflinePeople(offlinePeople);
-      // console.log("offline: " +  offlinePeople }
     });
   }, [onlinePeople]);
 
   useEffect(() => {
     if (selectedUserId) {
-      // console.log("selectedUserId:" + selectedUserId);
       axios.get("/messages/" + selectedUserId).then((res) => {
-        // console.log(res.data);
         setMessages(res.data);
       });
     }
-    // scrollBottom();
   }, [selectedUserId]);
 
   function scrollBottom() {
@@ -84,23 +76,11 @@ export default function Chat() {
 
   function handleMessage(event) {
     const messageData = JSON.parse(event.data);
-    // console.log({ event, messageData });
     if ("online" in messageData) {
       showOnlinePeople(messageData.online);
     } else if ("text" in messageData) {
-      // console.log({ messageData });
-      setMessages((prev) => [
-        ...prev,
-        // {
-        //   id: messageData.id,
-        //   text: messageData.text.trim(),
-        //   senderId: messageData.senderId,
-        //   recipientId: messageData.recipientId,
-        // },
-        { ...messageData },
-      ]);
+      setMessages((prev) => [...prev, { ...messageData }]);
     }
-    // scrollBottom();
   }
 
   function sendMessage(event) {
@@ -124,14 +104,6 @@ export default function Chat() {
         },
       ]);
     }
-    // scrollBottom();
-
-    // ws.send(
-    //   JSON.stringify({
-    //     recipient: selectedUserId,
-    //     test: newMessage,
-    //   }),
-    // );
   }
 
   const icon = () => {
@@ -142,7 +114,7 @@ export default function Chat() {
         viewBox="0 0 24 24"
         strokeWidth="1.5"
         stroke="currentColor"
-        className="size-6"
+        className="h-6 w-6"
       >
         <path
           strokeLinecap="round"
@@ -153,14 +125,28 @@ export default function Chat() {
     );
   };
 
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
   const onlineExcludingCurrentUser = { ...onlinePeople };
   delete onlineExcludingCurrentUser[id];
   const messageWithoutDupes = uniqBy(messages, "_id");
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <div className="w-1/3 overflow-y-auto bg-blue-50 p-4">
-        <Logo />
+    <div
+      className={`${darkMode ? "dark" : ""} flex h-screen bg-gray-50 dark:bg-gray-900`}
+    >
+      <div className="w-1/3 overflow-y-auto border-r border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <div className="mb-4 flex items-center justify-between">
+          <Logo />
+          <button
+            onClick={toggleDarkMode}
+            className="mb-5 rounded-full text-white shadow-md transition duration-300"
+          >
+            {darkMode ? "🌙" : "☀️"}
+          </button>
+        </div>
         {Object.keys(onlineExcludingCurrentUser).map((userid) => (
           <Contact
             key={userid}
@@ -169,6 +155,7 @@ export default function Chat() {
             onClick={() => setSelectedUserId(userid)}
             selected={userid === selectedUserId}
             online={true}
+            darkMode={darkMode}
           />
         ))}
         {offlinePeople &&
@@ -180,16 +167,24 @@ export default function Chat() {
               onClick={() => setSelectedUserId(userid)}
               selected={userid === selectedUserId}
               online={false}
+              darkMode={darkMode}
             />
           ))}
       </div>
       {/* Chat Window */}
-      <div className="flex flex-1 flex-col bg-blue-100 p-4">
-        <div className="flex-grow overflow-y-auto rounded-lg bg-white p-4 shadow-md">
+      <div className="relative flex flex-1 flex-col bg-gray-100 p-4 dark:bg-gray-800">
+        {selectedUserId && (
+          <button
+            className="absolute right-2 top-2 rounded-full bg-white p-2 text-white shadow-md dark:bg-gray-700"
+            onClick={() => setSelectedUserId(null)}
+          >
+            ❌
+          </button>
+        )}
+        <div className="flex-grow overflow-y-auto rounded-lg bg-white p-4 shadow-md dark:bg-gray-700">
           {!selectedUserId && (
             <div className="flex h-full items-center justify-center">
-              <div className="font-bold text-gray-400">
-                {" "}
+              <div className="font-bold text-gray-400 dark:text-gray-500">
                 &larr; Select a chat
               </div>
             </div>
@@ -208,8 +203,8 @@ export default function Chat() {
                     className={
                       "max-w-xs rounded-lg px-4 py-2 shadow-md " +
                       (message.senderId === id
-                        ? "bg-blue-400 text-white"
-                        : "bg-gray-200 text-gray-900")
+                        ? "bg-blue-500 text-white dark:bg-blue-700"
+                        : "bg-gray-200 text-gray-900 dark:bg-gray-600 dark:text-gray-200")
                     }
                   >
                     {message.text}
@@ -226,12 +221,12 @@ export default function Chat() {
               value={newMessage}
               onChange={(ev) => setNewMessage(ev.target.value)}
               type="text"
-              className="flex-grow rounded-3xl border border-gray-300 bg-white p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-grow rounded-full border border-gray-300 bg-white p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-yellow-500"
               placeholder="Type your message"
             />
             <button
               type="submit"
-              className="rounded-full bg-blue-500 p-3 text-white shadow-md transition duration-300 hover:bg-blue-600"
+              className="rounded-full bg-blue-600 p-3 text-white shadow-md transition duration-300 hover:bg-blue-700 dark:bg-yellow-500 dark:hover:bg-yellow-600"
             >
               {icon()}
             </button>
