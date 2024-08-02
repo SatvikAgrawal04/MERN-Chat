@@ -23,7 +23,7 @@ app.use(
   cors({
     credentials: true,
     origin: process.env.CLIENT_URL,
-  })
+  }),
 );
 
 async function getUserDataFromRequest(req) {
@@ -49,7 +49,6 @@ app.get("/messages/:userid", async (req, res) => {
   const { userid } = req.params;
   const userData = await getUserDataFromRequest(req);
   const ourUserid = userData.userid;
-  console.log({ userid, ourUserid });
   const messages = await Message.find({
     senderId: { $in: [userid, ourUserid] },
     recipientId: { $in: [userid, ourUserid] },
@@ -110,7 +109,7 @@ app.post("/login", async (req, res) => {
           id: user._id,
           message: "Login successful",
         });
-      }
+      },
     );
   } catch (err) {
     res.status(500).json({ message: "Something Went Wrong during login" });
@@ -147,12 +146,25 @@ const wss = new ws.WebSocketServer({ server });
 wss.on("connection", (connection, req) => {
   connection.isAlive = true;
 
+  function notifyAboutOnlinePeople() {
+    [...wss.clients].forEach((client) => {
+      client.send(
+        JSON.stringify({
+          online: [...wss.clients].map((c) => ({
+            userid: c.userid,
+            username: c.username,
+          })),
+        }),
+      );
+    });
+  }
+
   connection.timer = setInterval(() => {
     connection.ping();
     connection.deathTimer = setTimeout(() => {
       connection.isAlive = false;
       connection.terminate();
-      console.log("death");
+      notifyAboutOnlinePeople();
     }, 1000);
   }, 5000);
 
@@ -197,8 +209,8 @@ wss.on("connection", (connection, req) => {
               recipientId,
               senderId,
               _id: messageDoc._id,
-            })
-          )
+            }),
+          ),
         );
     }
     // const messageData = JSON.parse(message.toString());
@@ -210,15 +222,5 @@ wss.on("connection", (connection, req) => {
     // }
   });
 
-  // Inform clients of every online connection when they are connected
-  [...wss.clients].forEach((client) => {
-    client.send(
-      JSON.stringify({
-        online: [...wss.clients].map((c) => ({
-          userid: c.userid,
-          username: c.username,
-        })),
-      })
-    );
-  });
+  notifyAboutOnlinePeople();
 });
