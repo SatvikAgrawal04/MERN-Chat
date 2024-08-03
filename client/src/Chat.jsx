@@ -13,7 +13,8 @@ export default function Chat() {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const { loggedInUsername, id } = useContext(UserContext);
+  const { loggedInUsername, id, setId, setLoggedInUsername } =
+    useContext(UserContext);
   const messagesEndRef = useRef(null);
   const [darkMode, setDarkMode] = useState(true);
 
@@ -106,6 +107,14 @@ export default function Chat() {
     }
   }
 
+  function logout() {
+    axios.post("/logout").then(() => {
+      setId(null);
+      setLoggedInUsername(null);
+      setWs(null);
+    });
+  }
+
   const icon = () => {
     return (
       <svg
@@ -137,39 +146,60 @@ export default function Chat() {
     <div
       className={`${darkMode ? "dark" : ""} flex h-screen bg-gray-50 dark:bg-gray-900`}
     >
-      <div className="w-1/3 overflow-y-auto border-r border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-        <div className="mb-4 flex items-center justify-between">
-          <Logo />
-          <button
-            onClick={toggleDarkMode}
-            className="mb-5 rounded-full text-white shadow-md transition duration-300"
-          >
-            {darkMode ? "🌙" : "☀️"}
-          </button>
-        </div>
-        {Object.keys(onlineExcludingCurrentUser).map((userid) => (
-          <Contact
-            key={userid}
-            id={userid}
-            username={onlineExcludingCurrentUser[userid]}
-            onClick={() => setSelectedUserId(userid)}
-            selected={userid === selectedUserId}
-            online={true}
-            darkMode={darkMode}
-          />
-        ))}
-        {offlinePeople &&
-          Object.keys(offlinePeople).map((userid) => (
+      <div className="flex w-1/3 flex-col overflow-y-auto border-r border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <div className="flex-grow">
+          <div className="mb-4 flex items-center justify-between">
+            <Logo />
+            <button
+              onClick={toggleDarkMode}
+              className="mb-5 rounded-full text-white shadow-md transition duration-300"
+            >
+              {darkMode ? "🌙" : "☀️"}
+            </button>
+          </div>
+          {Object.keys(onlineExcludingCurrentUser).map((userid) => (
             <Contact
               key={userid}
               id={userid}
-              username={offlinePeople[userid].username}
+              username={onlineExcludingCurrentUser[userid]}
               onClick={() => setSelectedUserId(userid)}
               selected={userid === selectedUserId}
-              online={false}
+              online={true}
               darkMode={darkMode}
             />
           ))}
+          {offlinePeople &&
+            Object.keys(offlinePeople).map((userid) => (
+              <Contact
+                key={userid}
+                id={userid}
+                username={offlinePeople[userid].username}
+                onClick={() => setSelectedUserId(userid)}
+                selected={userid === selectedUserId}
+                online={false}
+                darkMode={darkMode}
+              />
+            ))}
+        </div>
+        <div className="flex items-center justify-center space-x-4 bg-gray-100 py-4 dark:bg-gray-800">
+          <span className="flex items-center text-lg font-semibold text-gray-700 dark:text-gray-300">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="mr-2 h-5 w-5"
+            >
+              <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
+            </svg>
+            {loggedInUsername}
+          </span>
+          <button
+            className="rounded-md border bg-blue-500 px-4 py-2 text-sm font-medium text-white transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-lg dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+            onClick={logout}
+          >
+            Logout
+          </button>
+        </div>
       </div>
       {/* Chat Window */}
       <div className="relative flex flex-1 flex-col bg-gray-100 p-4 dark:bg-gray-800">

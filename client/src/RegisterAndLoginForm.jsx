@@ -7,16 +7,23 @@ export default function RegisterAndLoginForm() {
   const [password, setPassword] = useState("");
   const { setLoggedInUsername, setId } = useContext(UserContext);
   const [isLoginOrRegister, setIsLoginOrRegister] = useState("register");
+  const [errorMessage, setErrorMessage] = useState("");
 
   async function handleSubmit(ev) {
-    const url = isLoginOrRegister === "register" ? "/register" : "/login";
     ev.preventDefault();
-    const { data } = await axios.post(url, {
-      username,
-      password,
-    });
-    setLoggedInUsername(username);
-    setId(data.id);
+    const url = isLoginOrRegister === "register" ? "/register" : "/login";
+    try {
+      const { data } = await axios.post(url, { username, password });
+      setLoggedInUsername(username);
+      setId(data.id);
+      setErrorMessage(""); // Clear error message on successful login/register
+    } catch (error) {
+      if (error.response && error.response.data) {
+        setErrorMessage(error.response.data.message);
+      } else {
+        setErrorMessage("An unexpected error occurred. Please try again.");
+      }
+    }
   }
 
   return (
@@ -28,11 +35,16 @@ export default function RegisterAndLoginForm() {
         <h2 className="mb-4 text-center text-2xl font-bold text-blue-600">
           {isLoginOrRegister === "register" ? "Register" : "Login"}
         </h2>
+        {errorMessage && (
+          <div className="mb-4 rounded-md bg-red-100 p-3 text-red-600">
+            {errorMessage}
+          </div>
+        )}
         <input
           value={username}
           onChange={(ev) => setUsername(ev.target.value)}
           type="text"
-          placeholder="username"
+          placeholder="Username"
           className="mb-4 block w-full rounded-md border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <input
@@ -45,27 +57,24 @@ export default function RegisterAndLoginForm() {
         <button className="mb-4 block w-full rounded-md bg-blue-500 p-3 text-white transition duration-300 hover:bg-blue-600">
           {isLoginOrRegister === "register" ? "Register" : "Login"}
         </button>
-        {isLoginOrRegister === "register" && (
+        {isLoginOrRegister === "register" ? (
           <div className="mt-2 text-center text-gray-600">
             Already a member?{" "}
             <button
+              type="button"
               className="text-blue-500 hover:underline"
-              onClick={() => {
-                setIsLoginOrRegister("login");
-              }}
+              onClick={() => setIsLoginOrRegister("login")}
             >
               Login Here
             </button>
           </div>
-        )}
-        {isLoginOrRegister === "login" && (
+        ) : (
           <div className="mt-2 text-center text-gray-600">
             Don't have an account?{" "}
             <button
+              type="button"
               className="text-blue-500 hover:underline"
-              onClick={() => {
-                setIsLoginOrRegister("register");
-              }}
+              onClick={() => setIsLoginOrRegister("register")}
             >
               Register Here
             </button>

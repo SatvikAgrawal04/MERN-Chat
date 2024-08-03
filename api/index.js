@@ -117,6 +117,11 @@ app.post("/login", async (req, res) => {
   }
 });
 
+//LOGOUT API
+app.post("/logout", async (req, res) => {
+  res.cookie("token", "").json("ok");
+});
+
 //REGISTER API
 app.post("/register", async (req, res) => {
   try {
@@ -163,6 +168,7 @@ wss.on("connection", (connection, req) => {
     connection.ping();
     connection.deathTimer = setTimeout(() => {
       connection.isAlive = false;
+      clearInterval(connection.timer);
       connection.terminate();
       notifyAboutOnlinePeople();
     }, 1000);
